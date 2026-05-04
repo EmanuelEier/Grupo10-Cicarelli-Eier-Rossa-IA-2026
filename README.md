@@ -1,0 +1,1 @@
+# Grupo10-Cicarelli-Eier-Rossa-IA-2026
