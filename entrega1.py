@@ -44,10 +44,10 @@ class MarsRoverBusquedaProblem(SearchProblem):
                 acciones.append(("moverse", (f+df, c+dc)))
 
             acciones.append(("equipar", "termico"))
-            acciones.append(("equipar", "percusión"))
+            acciones.append(("equipar", "percusion"))
 
             if muestras_cargadas == 2 or (muestras_cargadas == 1 and len(muestras_igneas_por_cargar) == 0 and len(muestras_sedimentarias_por_cargar) == 0):
-                acciones.append(("entregar", None))
+                acciones.append(("depositar", None))
 
             if posicion_rover not in self.zonas_sombra:
                 acciones.append(("recargar", None))
@@ -60,7 +60,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
             if 0 <= muestras_cargadas < 2:
                 if posicion_rover in muestras_igneas_por_cargar and tipo_taladro == "termico":
                     acciones.append(("recolectar", "ignea"))
-                elif posicion_rover in muestras_sedimentarias_por_cargar and tipo_taladro == "percusión":
+                elif posicion_rover in muestras_sedimentarias_por_cargar and tipo_taladro == "percusion":
                     acciones.append(("recolectar", "sedimentaria"))
 
         return acciones
@@ -88,7 +88,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
                 muestras_igneas_por_cargar_lista.remove(posicion_rover)
             else:
                 muestras_sedimentarias_por_cargar_lista.remove(posicion_rover)
-        elif accion == "entregar":
+        elif accion == "depositar":
             bateria -= muestras_cargadas
             muestras_cargadas = 0
         else:
@@ -105,7 +105,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
         costo = 0
         if accion == "moverse" or accion == "sobremarcha":
             costo = 1
-        elif accion == "entregar":
+        elif accion == "depositar":
             costo = muestras_cargadas
         elif accion == "equipar":
             costo = 3
@@ -127,8 +127,9 @@ class MarsRoverBusquedaProblem(SearchProblem):
                 distancias.append(self.manhattan(posicion_rover, posicion1))
         if not distancias:
             return 0
-        return max(distancias) + len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar)
-
+        return min(distancias) + 2 * (len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar))+ (len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar))/2
+#costo por llegar a la distancia mínima + costo por recolectar cada muestra + costo por depositar las muestras si siempre se depositan 2. No usamos la recarga
+#en la estimación ya que no necesariamente se va a recargar el rover y tampoco el costo por equipar un taladro nuevo ya que puede llegar a seguir con el mismo.
     def manhattan(self, pos_rata, pos_comida):
         return abs(pos_rata[0] - pos_comida[0]) + abs(pos_rata[1] - pos_comida[1])
 
