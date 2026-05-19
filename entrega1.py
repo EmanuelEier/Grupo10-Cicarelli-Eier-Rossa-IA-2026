@@ -1,3 +1,6 @@
+import math
+from math import ceil
+
 from numpy.random import rand
 from simpleai.search import SearchProblem, astar
 from simpleai.search.viewers import BaseViewer
@@ -39,24 +42,26 @@ class MarsRoverBusquedaProblem(SearchProblem):
         ]
         f, c = posicion_rover
 
-        if bateria >= 1:
+        if bateria > 1:
             for df, dc in movimientos_posibles:
                 acciones.append(("moverse", (f+df, c+dc)))
 
-            acciones.append(("equipar", "termico"))
-            acciones.append(("equipar", "percusion"))
+            if tipo_taladro != "termico":
+                acciones.append(("equipar", "termico"))
+            if tipo_taladro != "percusion":
+                acciones.append(("equipar", "percusion"))
 
             if muestras_cargadas == 2 or (muestras_cargadas == 1 and len(muestras_igneas_por_cargar) == 0 and len(muestras_sedimentarias_por_cargar) == 0):
                 acciones.append(("depositar", None))
 
-            if posicion_rover not in self.zonas_sombra:
-                acciones.append(("recargar", None))
+        if posicion_rover not in self.zonas_sombra and bateria < 20:
+            acciones.append(("recargar", None))
 
-        if bateria >= 4:
+        if bateria > 4:
             for df, dc in sobremarchas_posibles:
                 acciones.append(("sobremarcha", (f+df, c+dc)))
 
-        if bateria >= 3:
+        if bateria > 3:
             if 0 <= muestras_cargadas < 2:
                 if posicion_rover in muestras_igneas_por_cargar and tipo_taladro == "termico":
                     acciones.append(("recolectar", "ignea"))
@@ -89,7 +94,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
             else:
                 muestras_sedimentarias_por_cargar_lista.remove(posicion_rover)
         elif accion == "depositar":
-            bateria -= muestras_cargadas
+            bateria -= 1
             muestras_cargadas = 0
         else:
             if bateria <= 10:
@@ -116,7 +121,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
 
         return costo
 
-    def heuristic(self, state):
+    """def heuristic(self, state):
         bateria, tipo_taladro, muestras_cargadas, muestras_igneas_por_cargar, muestras_sedimentarias_por_cargar, posicion_rover = state
         distancias = []
         if len(muestras_igneas_por_cargar)>0:
@@ -127,9 +132,81 @@ class MarsRoverBusquedaProblem(SearchProblem):
                 distancias.append(self.manhattan(posicion_rover, posicion1))
         if not distancias:
             return 0
-        return min(distancias) + 2 * (len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar))+ (len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar))/2
-#costo por llegar a la distancia mínima + costo por recolectar cada muestra + costo por depositar las muestras si siempre se depositan 2. No usamos la recarga
-#en la estimación ya que no necesariamente se va a recargar el rover y tampoco el costo por equipar un taladro nuevo ya que puede llegar a seguir con el mismo.
+        total_muestras = len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar)
+        costo_movimiento = min(distancias)
+        costo_recolectar = 2 * total_muestras
+        costo_depositar = total_muestras // 2
+        costo_equipar = 0
+        hay_igneas = len(muestras_igneas_por_cargar) > 0
+        hay_sedimentarias = len(muestras_sedimentarias_por_cargar) > 0
+        if hay_igneas and hay_sedimentarias:
+            # si ya tenés un taladro equipado, igual necesitás cambiar al menos una vez
+            costo_equipar = 3
+        elif (hay_igneas and tipo_taladro != "termico") or (hay_sedimentarias and tipo_taladro != "percusion"):
+            # necesitás equipar el taladro correcto
+            costo_equipar = 3
+
+        # Estimamos cuántas recargas mínimas necesitamos: si la batería disponible
+        # no alcanza para cubrir todos los costos, necesitamos al menos ceil(deficit/10) recargas
+        bateria_necesaria = costo_movimiento + costo_equipar + costo_recolectar + costo_depositar
+        deficit = bateria_necesaria - bateria
+        recargas_minimas = max(0, ceil(deficit / 10))
+        costo_recarga = recargas_minimas * 4  # cada recarga cuesta 4 minutos
+
+        return costo_movimiento + costo_equipar + costo_recolectar + costo_depositar + costo_recarga
+        #costo por llegar a la distancia mínima + costo por cambiar de taladro o equipar uno + costo por recolectar cada muestra + costo por depositar las muestras"""
+
+    def heuristic(self, state):
+        bateria, tipo_taladro, muestras_cargadas, muestras_igneas, muestras_sedimentarias, posicion = state
+
+        faltantes = list(muestras_igneas) + list(muestras_sedimentarias)
+
+        # Si ya no quedan en el mapa, solo falta depositar el inventario
+        if not faltantes:
+            if muestras_cargadas > 0:
+                return muestras_cargadas
+            return 0
+
+        distancias = [self.manhattan(posicion, p) for p in faltantes]
+        dist_min = min(distancias)
+
+        # Calculamos el tiempo mínimo ideal (A* requiere que sea 100% admisible)
+        # El movimiento más veloz es sobremarcha: 1 min cada 2 casillas.
+        tiempo_mov = math.ceil(dist_min / 2.0)
+
+        tiempo_rec = 2 * len(faltantes)
+        muestras_a_depositar = len(faltantes) + muestras_cargadas
+        tiempo_dep = muestras_a_depositar
+
+        tiempo_eq = 0
+        hay_igneas = len(muestras_igneas) > 0
+        hay_sedimentarias = len(muestras_sedimentarias) > 0
+
+        if hay_igneas and hay_sedimentarias:
+            tiempo_eq = 3
+        elif hay_igneas and tipo_taladro != "termico":
+            tiempo_eq = 3
+        elif hay_sedimentarias and tipo_taladro != "percusion":
+            tiempo_eq = 3
+
+        # Calculamos si será necesario recargar (batería es la limitante secundaria)
+        bat_mov = dist_min  # El movimiento de menos batería consume 1 por casilla
+        bat_rec = 3 * len(faltantes)
+        bat_eq = 1 if tiempo_eq > 0 else 0
+        bat_dep = math.ceil(muestras_a_depositar / 2.0)  # Entran 2 muestras por cápsula
+
+        bat_necesaria = bat_mov + bat_rec + bat_eq + bat_dep
+
+        # La batería NUNCA llega a 0, entonces tu batería utilizable máxima actual es (bateria - 1)
+        deficit = bat_necesaria - (bateria - 1)
+
+        tiempo_recarga = 0
+        if deficit > 0:
+            recargas = math.ceil(deficit / 10.0)
+            tiempo_recarga = recargas * 4
+
+        return tiempo_mov + tiempo_rec + tiempo_dep + tiempo_eq + tiempo_recarga
+
     def manhattan(self, pos_rata, pos_comida):
         return abs(pos_rata[0] - pos_comida[0]) + abs(pos_rata[1] - pos_comida[1])
 
