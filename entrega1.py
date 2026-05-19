@@ -22,7 +22,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
 
     def is_goal(self, state):
         bateria, tipo_taladro, muestras_cargadas, muestras_igneas_por_cargar, muestras_sedimentarias_por_cargar, posicion_rover = state
-        return muestras_cargadas == 0 and len(muestras_igneas_por_cargar) == 0 and len(muestras_sedimentarias_por_cargar) == 0 and bateria > 0
+        return muestras_cargadas == 0 and len(muestras_igneas_por_cargar) == 0 and len(muestras_sedimentarias_por_cargar) == 0
 
     def actions(self, state):
         bateria, tipo_taladro, muestras_cargadas, muestras_igneas_por_cargar, muestras_sedimentarias_por_cargar, posicion_rover = state
@@ -172,8 +172,8 @@ class MarsRoverBusquedaProblem(SearchProblem):
 
         return tiempo_mov + tiempo_rec + tiempo_dep + tiempo_eq + tiempo_recarga
 
-    def manhattan(self, pos_rata, pos_comida):
-        return abs(pos_rata[0] - pos_comida[0]) + abs(pos_rata[1] - pos_comida[1])
+    def manhattan(self, pos1, pos2):
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
