@@ -121,41 +121,6 @@ class MarsRoverBusquedaProblem(SearchProblem):
 
         return costo
 
-    """def heuristic(self, state):
-        bateria, tipo_taladro, muestras_cargadas, muestras_igneas_por_cargar, muestras_sedimentarias_por_cargar, posicion_rover = state
-        distancias = []
-        if len(muestras_igneas_por_cargar)>0:
-            for posicion in muestras_igneas_por_cargar:
-                distancias.append(self.manhattan(posicion_rover, posicion))
-        if len(muestras_sedimentarias_por_cargar) > 0:
-            for posicion1 in muestras_sedimentarias_por_cargar:
-                distancias.append(self.manhattan(posicion_rover, posicion1))
-        if not distancias:
-            return 0
-        total_muestras = len(muestras_igneas_por_cargar) + len(muestras_sedimentarias_por_cargar)
-        costo_movimiento = min(distancias)
-        costo_recolectar = 2 * total_muestras
-        costo_depositar = total_muestras // 2
-        costo_equipar = 0
-        hay_igneas = len(muestras_igneas_por_cargar) > 0
-        hay_sedimentarias = len(muestras_sedimentarias_por_cargar) > 0
-        if hay_igneas and hay_sedimentarias:
-            # si ya tenés un taladro equipado, igual necesitás cambiar al menos una vez
-            costo_equipar = 3
-        elif (hay_igneas and tipo_taladro != "termico") or (hay_sedimentarias and tipo_taladro != "percusion"):
-            # necesitás equipar el taladro correcto
-            costo_equipar = 3
-
-        # Estimamos cuántas recargas mínimas necesitamos: si la batería disponible
-        # no alcanza para cubrir todos los costos, necesitamos al menos ceil(deficit/10) recargas
-        bateria_necesaria = costo_movimiento + costo_equipar + costo_recolectar + costo_depositar
-        deficit = bateria_necesaria - bateria
-        recargas_minimas = max(0, ceil(deficit / 10))
-        costo_recarga = recargas_minimas * 4  # cada recarga cuesta 4 minutos
-
-        return costo_movimiento + costo_equipar + costo_recolectar + costo_depositar + costo_recarga
-        #costo por llegar a la distancia mínima + costo por cambiar de taladro o equipar uno + costo por recolectar cada muestra + costo por depositar las muestras"""
-
     def heuristic(self, state):
         bateria, tipo_taladro, muestras_cargadas, muestras_igneas, muestras_sedimentarias, posicion = state
 
@@ -170,7 +135,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
         distancias = [self.manhattan(posicion, p) for p in faltantes]
         dist_min = min(distancias)
 
-        # Calculamos el tiempo mínimo ideal (A* requiere que sea 100% admisible)
+        # Calculamos el tiempo mínimo ideal
         # El movimiento más veloz es sobremarcha: 1 min cada 2 casillas.
         tiempo_mov = math.ceil(dist_min / 2.0)
 
@@ -197,13 +162,13 @@ class MarsRoverBusquedaProblem(SearchProblem):
 
         bat_necesaria = bat_mov + bat_rec + bat_eq + bat_dep
 
-        # La batería NUNCA llega a 0, entonces tu batería utilizable máxima actual es (bateria - 1)
+        # La batería NUNCA llega a 0, entonces la batería utilizable máxima actual es (bateria - 1)
         deficit = bat_necesaria - (bateria - 1)
 
         tiempo_recarga = 0
-        if deficit > 0:
-            recargas = math.ceil(deficit / 10.0)
-            tiempo_recarga = recargas * 4
+        if deficit > 0:#si se necesita recargar batería
+            recargas = math.ceil(deficit / 10.0)#dividimos el deficit por 10(cantidad que se recarga en cada recarga) y redondeamos al entero superior
+            tiempo_recarga = recargas * 4#cada recarga tarda 4 minutos
 
         return tiempo_mov + tiempo_rec + tiempo_dep + tiempo_eq + tiempo_recarga
 
