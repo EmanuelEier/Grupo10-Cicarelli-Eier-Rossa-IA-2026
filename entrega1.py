@@ -178,7 +178,7 @@ class MarsRoverBusquedaProblem(SearchProblem):
 
 def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, muestras_sedimentarias):
     problem = MarsRoverBusquedaProblem(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas,muestras_sedimentarias)
-    result = astar(problem, graph_search=True, viewer=BaseViewer())
+    result = astar(problem, graph_search=True)
     if result is None:
         return []
     return [step[0] for step in result.path()[1:]]
