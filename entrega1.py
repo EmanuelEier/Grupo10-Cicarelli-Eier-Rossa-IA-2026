@@ -132,12 +132,23 @@ class MarsRoverBusquedaProblem(SearchProblem):
                 return muestras_cargadas
             return 0
 
-        distancias = [self.manhattan(posicion, p) for p in faltantes]
-        dist_min = min(distancias)
+        # Estimación del recorrido total mínimo
+        # partimos desde la posición actual y siempre vamos a la muestra más cercana.
+        # Es admisible porque es un límite inferior del recorrido real.
+        pendientes = list(faltantes)
+        pos_actual = posicion
+        distancia_total = 0
+        while pendientes:
+            dists = [(self.manhattan(pos_actual, p), p) for p in pendientes]
+            dists.sort()
+            distancia_total += dists[0][0]
+            pos_actual = dists[0][1]
+            pendientes.remove(pos_actual)
 
-        # Calculamos el tiempo mínimo ideal
+        dist_min = min(self.manhattan(posicion, p) for p in faltantes)
+
         # El movimiento más veloz es sobremarcha: 1 min cada 2 casillas.
-        tiempo_mov = math.ceil(dist_min / 2.0)
+        tiempo_mov = math.ceil(distancia_total / 2.0)
 
         tiempo_rec = 2 * len(faltantes)
         muestras_a_depositar = len(faltantes) + muestras_cargadas
@@ -154,7 +165,8 @@ class MarsRoverBusquedaProblem(SearchProblem):
         elif hay_sedimentarias and tipo_taladro != "percusion":
             tiempo_eq = 3
 
-        # Calculamos si será necesario recargar (batería es la limitante secundaria)
+        # Calculamos si será necesario recargar
+        # Usamos dist_min para el movimiento mínimo de batería (sin sobremarcha)
         bat_mov = dist_min  # El movimiento de menos batería consume 1 por casilla
         bat_rec = 3 * len(faltantes)
         bat_eq = 1 if tiempo_eq > 0 else 0
@@ -166,9 +178,10 @@ class MarsRoverBusquedaProblem(SearchProblem):
         deficit = bat_necesaria - (bateria - 1)
 
         tiempo_recarga = 0
-        if deficit > 0:#si se necesita recargar batería
-            recargas = math.ceil(deficit / 10.0)#dividimos el deficit por 10(cantidad que se recarga en cada recarga) y redondeamos al entero superior
-            tiempo_recarga = recargas * 4#cada recarga tarda 4 minutos
+        if deficit > 0:  # si se necesita recargar batería
+            recargas = math.ceil(
+                deficit / 10.0)  # dividimos el deficit por 10 (cantidad que se recarga en cada recarga) y redondeamos al entero superior
+            tiempo_recarga = recargas * 4  # cada recarga tarda 4 minutos
 
         return tiempo_mov + tiempo_rec + tiempo_dep + tiempo_eq + tiempo_recarga
 

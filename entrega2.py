@@ -65,62 +65,47 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
 
     variables_lab = [v for v in variables if v.startswith("lab")]
     variables_dep = [v for v in variables if v.startswith("dep")]
-    variables_lab_y_dep = variables_lab + variables_dep
-
-    def tiene_adyacente_en_lista(lista1, lista2):
-        for celda in lista1:
-            fila, columna = celda
-            adyacentes = [
-                (fila - 1, columna),
-                (fila + 1, columna),
-                (fila, columna - 1),
-                (fila, columna + 1),
-            ]
-            if any(adyacente in lista2 for adyacente in adyacentes):
-                return True
-
-        return False
 
     def tiene_depositos_adyacentes(variables, valores):
-        posiciones_lab = [pos for var, pos in zip(variables, valores) if var.startswith("lab")]
-        posiciones_dep = [pos for var, pos in zip(variables, valores) if var.startswith("dep")]
-        return tiene_adyacente_en_lista(posiciones_lab, posiciones_dep)
+        fila, columna = valores[0]  # siempre el lab primero
+        posiciones_dep = set(valores[1:])
+        adyacentes = [
+            (fila - 1, columna),
+            (fila + 1, columna),
+            (fila, columna - 1),
+            (fila, columna + 1),
+        ]
+        return any(adyacente in posiciones_dep for adyacente in adyacentes)
 
     if variables_lab and variables_dep:
         for lab in variables_lab:
             restricciones.append((tuple([lab] + variables_dep), tiene_depositos_adyacentes))
 
-    def tiene_adyacente_libre(lista1, lista2, lista3):
-        for celda in lista1:
-            fila, columna = celda
-            adyacentes = [
-                (fila - 1, columna),
-                (fila + 1, columna),
-                (fila, columna - 1),
-                (fila, columna + 1),
-            ]
-            filas, columnas = camp_size
-            tiene_libre = any(
-                0 <= nf < filas and 0 <= nc < columnas
-                and (nf, nc) not in lista2 and (nf, nc) not in lista3
-                for nf, nc in adyacentes
-            )
-            if not tiene_libre:
-                return False
-        return True
-
     def tiene_algun_adyacente_libre(variables, valores):
-        posiciones_hab = [pos for var, pos in zip(variables, valores) if var.startswith("hab")]
-        posiciones_resto = [pos for var, pos in zip(variables, valores) if not var.startswith("hab")]
-        return tiene_adyacente_libre(posiciones_hab, posiciones_resto, craters)
+        posicion_hab = valores[0]
+        posiciones_resto = set(valores[1:])
+        craters_set = set(craters)
+        fila, columna = posicion_hab
+        filas, columnas = camp_size
+        adyacentes = [
+            (fila - 1, columna),
+            (fila + 1, columna),
+            (fila, columna - 1),
+            (fila, columna + 1),
+        ]
+        return any(
+            0 <= nf < filas and 0 <= nc < columnas
+            and (nf, nc) not in posiciones_resto and (nf, nc) not in craters_set
+            for nf, nc in adyacentes
+        )
 
-    restricciones.append((tuple(variables), tiene_algun_adyacente_libre))
+    for hab in variables_hab:
+        otras = [v for v in variables if v != hab]
+        restricciones.append((tuple([hab] + otras), tiene_algun_adyacente_libre))
 
     problem = CspProblem(variables, dominios, restricciones)
 
-    result = backtrack(problem, variable_heuristic=MOST_CONSTRAINED_VARIABLE,
-                       value_heuristic=LEAST_CONSTRAINING_VALUE,
-                       inference=True)
+    result = backtrack(problem)
     if result is None:
         return None
 
