@@ -4,4 +4,4 @@ En cuanto a restricciones, las dos implementan las ocho reglas del enunciado de 
 
 En términos de legibilidad, la solución de la IA está mejor estructurada visualmente con secciones comentadas. La solución propia es más compacta(tiene menos líneas y menos comentarios). 
 
-En cuanto a corrección y performance, nuestra solución pasa todos los tests muy rápidamente(en poco más de 6 segundos). En cambio, la solución de la IA tardó muchísimo tiempo en pasar los tests() debido a que el test correspondiente al caso 9 tardó .. segundos cuando su límite es de 
+En cuanto a corrección y performance, nuestra solución pasa todos los tests muy rápidamente(en poco más de 6 segundos). En cambio, la solución de la IA tardó muchísimo tiempo en pasar los tests() debido a que el test correspondiente al caso 9 tardó .. segundos cuando su límite es de 300 segundos.
