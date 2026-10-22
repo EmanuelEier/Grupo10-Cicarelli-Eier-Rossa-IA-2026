@@ -1,12 +1,12 @@
 # Grupo10-Cicarelli-Eier-Rossa-IA-2026
 
-## Estructura de carpetas del TP de machine learning
+## Archivos del TP de machine learning
 
 ```
+.
+├── TP-Machine_Learning-Random_Forest.ipynb
+├── TP-Machine_Learning-Redes_Neuronales.ipynb
 └── ucse-ai-2026/
     ├── solicitudes_train.csv
     ├── solicitudes_test.csv
     └── comportamiento_bancario.csv
-```
-
-Los datos no están en el repositorio: hay que copiarlos en `ucse-ai-2026/` antes de ejecutar el código.
